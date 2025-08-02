@@ -1,0 +1,60 @@
+{
+  "name": "bhvr-site",
+  "version": "0.0.1",
+  "description": "A monorepo template built with Bun, Hono, Vite, and React",
+  "author": "Steve Simkins",
+  "license": "MIT",
+  "homepage": "https://github.com/armelgeek/mono-repo-boilerplate",
+  "workspaces": [
+    "./server",
+    "./client",
+    "./shared"
+  ],
+  "scripts": {
+    "dev:client": "cd client && bun run dev",
+    "dev:server": "cd server && bun run dev",
+    "dev:shared": "cd shared && bun run dev",
+    "dev": "concurrently \"bun run dev:shared\" \"bun run dev:server\" \"bun run dev:client\"",
+    "build:client": "cd client && bun run build",
+    "build:server": "cd server && bun run build",
+    "build:shared": "cd shared && bun run build",
+    "build": "bun run build:shared && bun run build:server && bun run build:client",
+    "lint": "cd client && bun run lint && cd ../server && bun run lint && cd ../shared && bun run lint",
+    "lint:fix": "cd client && bun run lint:fix && cd ../server && bun run lint:fix && cd ../shared && bun run lint:fix",
+    "test": "cd server && bun run test && cd ../client && bun run test",
+    "db:generate": "cd server && bun run db:generate",
+    "db:migrate": "cd server && bun run db:migrate",
+    "db:push": "cd server && bun run db:push",
+    "db:studio": "cd server && bun run db:studio",
+    "postinstall": "bun run build:shared",
+    "deploy:client": "cd client && orbiter deploy",
+    "deploy:server": "cd server && bun run deploy",
+    "create:superuser": "cd server && bun run create:superuser",
+    "expo:start": "cd mobile && expo start",
+    "expo:dev": "cd mobile && expo start -c",
+    "expo:reset-project": "cd mobile && node ./scripts/reset-project.js",
+    "expo:android": "cd mobile && DARK_MODE=media expo start --android",
+    "expo:ios": "cd mobile && DARK_MODE=media expo start --ios",
+    "expo:web": "cd mobile && DARK_MODE=media expo start --web",
+    "expo:lint": "cd mobile && expo lint",
+    "expo:ui:add": "npx gluestack-ui add"
+  },
+  "keywords": [
+    "bun",
+    "hono",
+    "react",
+    "vite",
+    "monorepo"
+  ],
+  "devDependencies": {
+    "bun-types": "latest",
+    "concurrently": "^8.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@mini_apps/utilities": "^0.0.3",
+    "react-quill": "^2.0.0"
+  }
+}
