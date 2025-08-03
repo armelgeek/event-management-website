@@ -17,19 +17,43 @@ export class EventController implements Routes {
   private updateEvent = new UpdateEventUseCase()
   private deleteEvent = new DeleteEventUseCase()
 
+  private CategorySchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    createdAt: z.string(),
+    updatedAt: z.string()
+  })
+  private TagSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    createdAt: z.string(),
+    updatedAt: z.string()
+  })
   private EventSchema = z.object({
     id: z.string().openapi({ example: 'evt_ABC123' }),
-    name: z.string().openapi({ example: 'Conférence IA 2025' }),
+    title: z.string().openapi({ example: 'Conférence IA 2025' }),
     image: z.string().optional().openapi({ example: 'https://cdn.com/image.jpg' }),
     startDate: z.string().openapi({ example: '2025-08-10T09:00:00.000Z' }),
     endDate: z.string().openapi({ example: '2025-08-10T18:00:00.000Z' }),
     location: z.string().openapi({ example: 'Paris, France' }),
     description: z.string().optional().openapi({ example: "Un événement sur l'IA." }),
     creatorId: z.string().openapi({ example: 'user_123' }),
+    categoryId: z.string().optional().openapi({ example: 'cat_123' }),
+    category: this.CategorySchema.optional(),
+    tags: z.array(this.TagSchema).optional(),
     createdAt: z.string().openapi({ example: '2025-08-01T12:00:00.000Z' }),
     updatedAt: z.string().openapi({ example: '2025-08-01T12:00:00.000Z' })
   })
-  private CreateEventSchema = this.EventSchema.omit({ id: true, createdAt: true, creatorId: true, updatedAt: true })
+  private CreateEventSchema = this.EventSchema.omit({
+    id: true,
+    createdAt: true,
+    creatorId: true,
+    updatedAt: true,
+    category: true,
+    tags: true
+  })
   private UpdateEventSchema = this.CreateEventSchema.partial()
 
   constructor() {
@@ -169,7 +193,12 @@ export class EventController implements Routes {
           ...parse.data,
           creatorId: currentUser.id
         })
-        return c.json(result, result.success ? 201 : 400)
+        if (result.success && result.data?.id) {
+          // Retourne l'event enrichi (catégorie/tags)
+          const enriched = await this.getEvent.execute(result.data.id)
+          return c.json(enriched, 201)
+        }
+        return c.json(result, 400)
       }
     )
 
@@ -211,6 +240,11 @@ export class EventController implements Routes {
         const id = c.req.param('id')
         const body = await c.req.json()
         const result = await this.updateEvent.execute(id, body)
+        if (result.success && result.data?.id) {
+          // Retourne l'event enrichi (catégorie/tags)
+          const enriched = await this.getEvent.execute(result.data.id)
+          return c.json(enriched)
+        }
         return c.json(result)
       }
     )

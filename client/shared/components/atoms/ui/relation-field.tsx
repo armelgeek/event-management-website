@@ -29,7 +29,7 @@ interface RelationFieldProps {
 // Service générique pour charger les données de relation
 async function fetchRelationData(entity: string) {
   try {
-    const response = await fetch(`${API_URL}/api/${entity}`, {
+    const response = await fetch(`${API_URL}/${entity}`, {
       credentials: 'include',
     });
     if (!response.ok) {
@@ -183,7 +183,7 @@ export function RelationField({ field, value, onChange, className }: RelationFie
               </SelectItem>
             ) : (
               relationData
-                .filter((item: RelationItem) => !selectedValues.includes(item.id))
+                .filter((item: RelationItem) => !!item.id && !selectedValues.includes(item.id))
                 .map((item: RelationItem) => (
                   <SelectItem key={item.id} value={item.id}>
                     {getDisplayName(item)}
@@ -331,11 +331,13 @@ export function RelationField({ field, value, onChange, className }: RelationFie
               Aucun {relation.entity} disponible
             </SelectItem>
           ) : (
-            relationData.map((item: RelationItem) => (
-              <SelectItem key={item.id} value={item.id}>
-                {getDisplayName(item)}
-              </SelectItem>
-            ))
+            relationData
+              .filter((item: RelationItem) => !!item.id)
+              .map((item: RelationItem) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {getDisplayName(item)}
+                </SelectItem>
+              ))
           )}
         </SelectContent>
       </Select>

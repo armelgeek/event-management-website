@@ -2,14 +2,14 @@ import React from 'react';
 import { Toaster } from '@/shared/components/atoms/ui/sonner';
 import { Provider } from '@/shared/providers';
 import NextTopLoader from 'nextjs-toploader';
-import {  Livvic } from 'next/font/google';
+import {  Oxanium } from 'next/font/google';
 import '@/shared/styles/globals.css';
 
-const spaceGrotesk = Livvic({
+const spaceGrotesk = Oxanium({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-space-grotesk',
-  style: ['normal', 'italic'],
+  style: ['normal'],
   weight: ['400', '500', '600', '700'],
 });
 

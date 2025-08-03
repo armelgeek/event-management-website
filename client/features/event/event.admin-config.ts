@@ -22,6 +22,8 @@ export const EventAdminConfig = createAdminEntity('event', eventSchema, {
     'location',
     'description',
     'image',
+    'categoryId',
+    'tags'
   ],
   ui: {
     form: {
@@ -61,12 +63,24 @@ export const EventAdminConfig = createAdminEntity('event', eventSchema, {
         order: 5 
       } 
     },
-    image: { 
+    tags: {
       display: { 
+        layout: 'auto',
+        order: 8 
+      }
+    },
+    image: {
+      display: {
         layout: 'half',
         order: 6 
       } 
     },
+    categoryId: {
+      display: {
+        layout: 'auto',
+        order: 7
+      }
+    }
   }
 });
 

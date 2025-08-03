@@ -43,16 +43,16 @@ export type SidebarNavItem = NavItemWithChildren;
 
 export const CLIENT_MENU_ITEMS: NavItem[] = [
   {
-    title: "Accueil",
-    url: "/",
+    title: "Rechercher",
+    url: "/rechercher",
   },
   {
-    title: "Blog",
-    url: "/blog",
+    title: "Calendrier",
+    url: "/calendar",
   },
   {
-    title: "Catégories",
-    url: "/category",
+    title: "Mes evénements",
+    url: "/events",
   },
 ];
 

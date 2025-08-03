@@ -42,7 +42,7 @@ export function CreateForm<TSchema extends z.ZodType>({
     onSuccess: () => {
       toast.success('Élément créé avec succès');
       queryClient.invalidateQueries({ queryKey });
-      
+
       if (onSuccess) {
         onSuccess();
       } else if (redirectTo) {
@@ -62,7 +62,7 @@ export function CreateForm<TSchema extends z.ZodType>({
       if (response.status >= 200 && response.status < 300) {
         toast.success('Élément créé avec succès');
         queryClient.invalidateQueries({ queryKey });
-        
+
         if (onSuccess) {
           onSuccess();
         } else if (redirectTo) {
@@ -82,19 +82,18 @@ export function CreateForm<TSchema extends z.ZodType>({
   const resolvedDescription = description ?? config.description;
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{resolvedTitle}</CardTitle>
-        {resolvedDescription && <p className="text-sm text-muted-foreground">{resolvedDescription}</p>}
-      </CardHeader>
-      <CardContent>
-        <DynamicForm
-          schema={schema}
-          config={config}
-          onCreate={handleSubmit}
-          isSubmitting={createMutation.isPending}
-        />
-      </CardContent>
-    </Card>
+    <div className={className}>
+      <h3 className='font-bold'>{resolvedTitle}</h3>
+      {resolvedDescription && <p className="text-sm text-muted-foreground">{resolvedDescription}</p>}
+
+      <DynamicForm
+        schema={schema}
+        config={config}
+        maxHeight='max-h-full'
+        overflowY='hidden'
+        onCreate={handleSubmit}
+        isSubmitting={createMutation.isPending}
+      />
+    </div>
   );
 }

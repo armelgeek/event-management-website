@@ -44,20 +44,29 @@ interface DynamicFormProps<T = Record<string, unknown>> {
   className?: string;
   onCreate?: (data: Record<string, unknown>) => Promise<void>;
   onUpdate?: (data: Record<string, unknown>) => Promise<void>;
+  /**
+   * Contrôle le comportement overflow-y du conteneur du formulaire (auto, scroll, hidden, visible). Par défaut: 'auto'.
+   */
+  overflowY?: 'auto' | 'scroll' | 'hidden' | 'visible';
+  /**
+   * Classe Tailwind pour la hauteur max du formulaire (ex: 'max-h-[80vh]', 'max-h-none'). Par défaut: 'max-h-[80vh]'.
+   */
+  maxHeight?: string;
 }
 
-export function DynamicForm<
-  T extends { id?: string | number } = Record<string, unknown>
->({
-  config,
-  schema,
-  initialData,
-  onSuccess,
-  isSubmitting = false,
-  className,
-  onCreate,
-  onUpdate,
-}: Omit<DynamicFormProps<T>, 'onSubmit'>) {
+export function DynamicForm<T extends { id?: string | number } = Record<string, unknown>>(props: DynamicFormProps<T>) {
+  const {
+    config,
+    schema,
+    initialData,
+    onSuccess,
+    isSubmitting = false,
+    className,
+    onCreate,
+    onUpdate,
+    overflowY = 'auto',
+    maxHeight = 'max-h-[80vh]',
+  } = props;
   const form = useForm<Record<string, unknown>>({
     resolver: zodResolver(schema),
     defaultValues: (initialData as Record<string, unknown>) || {},
@@ -471,10 +480,20 @@ export function DynamicForm<
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
-        className={cn('flex flex-col h-full max-h-[80vh] space-y-0', className)}
+        className={cn('flex flex-col h-full space-y-0', maxHeight, className)}
         style={{ minHeight: 320 }}
       >
-        <div className="flex-1 overflow-auto px-1 pt-2 pb-4">
+        <div
+          className={cn(
+            'flex-1 px-1 pt-2 pb-4',
+            {
+              'overflow-auto': overflowY === 'auto',
+              'overflow-scroll': overflowY === 'scroll',
+              'overflow-hidden': overflowY === 'hidden',
+              'overflow-visible': overflowY === 'visible',
+            }
+          )}
+        >
           {renderFormSections()}
 
           {/* Affichage global des erreurs de validation */}

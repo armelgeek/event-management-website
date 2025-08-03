@@ -5,30 +5,35 @@ const eventRepository = new EventRepository()
 
 // Types pour la création et la mise à jour d'un événement
 export interface EventCreatePayload {
-  name: string
-  image?: string
-  startDate: string
-  endDate: string
-  location: string
-  description?: string
-  creatorId: string
+  title: string;
+  image?: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  description?: string;
+  creatorId: string;
+  categoryId?: string;
+  tags?: string[];
 }
 
 export interface EventUpdatePayload {
-  name?: string
+  title?: string;
   image?: string
   startDate?: string
   endDate?: string
   location?: string
   description?: string
   creatorId?: string
+  categoryId?: string
+  tags?: string[]
 }
 
 export class CreateEventUseCase {
   async execute(params: EventCreatePayload) {
     // Conversion des dates string -> Date
     const event = await eventRepository.create({
-      ...params,
+    ...params,
+    title: params.title,
       startDate: new Date(params.startDate),
       endDate: new Date(params.endDate)
     })
