@@ -1,5 +1,5 @@
-import { integer, pgTable, real, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
+import { integer, pgTable, real, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 import { users } from './auth'
 
 export const events = pgTable('event', {
@@ -21,7 +21,7 @@ export const tickets = pgTable('ticket', {
   id: text('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   price: real('price').notNull().default(0),
-  quantity: integer('quantity').notNull(), 
+  quantity: integer('quantity').notNull(),
   eventId: text('eventId')
     .notNull()
     .references(() => events.id, { onDelete: 'cascade' }),
@@ -51,7 +51,7 @@ export const eventsRelations = relations(events, ({ many, one }) => ({
     fields: [events.creatorId],
     references: [users.id]
   })
-}));
+}))
 
 export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   event: one(events, {
@@ -59,7 +59,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
     references: [events.id]
   }),
   bookings: many(bookings)
-}));
+}))
 
 export const bookingsRelations = relations(bookings, ({ one }) => ({
   event: one(events, {
@@ -74,4 +74,4 @@ export const bookingsRelations = relations(bookings, ({ one }) => ({
     fields: [bookings.ticketId],
     references: [tickets.id]
   })
-}));
+}))

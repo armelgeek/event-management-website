@@ -11,7 +11,7 @@ import { DynamicForm } from '@/shared/components/atoms/ui/dynamic-form';
 import { createDynamicColumns } from '@/shared/lib/admin/admin-generator';
 import { useAdminEntity } from '@/shared/hooks/use-admin-entity';
 import { Plus, EllipsisVertical } from 'lucide-react';
-import type { AdminConfigWithServices } from '@/shared/lib/admin/admin-generator';
+import type { AdminConfigWithChild } from '@/shared/lib/admin/admin-generator';
 import { Card, CardHeader, CardContent } from '@/shared/components/atoms/ui/card';
 import {
   Sheet,
@@ -39,7 +39,7 @@ type ChildConfig = {
 };
 
 interface SimpleAdminPageProps<T extends Record<string, unknown>> {
-  config: AdminConfigWithServices<T>;
+  config: AdminConfigWithChild<T>;
   schema: ZodType<T>;
   className?: string;
   renderFilters?: () => React.ReactNode;
@@ -47,7 +47,7 @@ interface SimpleAdminPageProps<T extends Record<string, unknown>> {
 }
 
 // Ajout d'un type pour la propriété optionnelle parseData (legacy)
-interface AdminConfigWithLegacyParse<T extends Record<string, unknown>> extends AdminConfigWithServices<T> {
+interface AdminConfigWithLegacyParse<T extends Record<string, unknown>> extends AdminConfigWithChild<T> {
   parseData?: (item: Record<string, unknown>) => T;
 }
 
@@ -63,14 +63,6 @@ interface BulkAction {
 // Extension de la config admin pour bulkActions personnalisées
 interface AdminConfigWithBulkActions<T extends Record<string, unknown>> extends AdminConfigWithLegacyParse<T> {
   bulkActions?: BulkAction[];
-}
-
-interface SimpleAdminPageProps<T extends Record<string, unknown>> {
-  config: AdminConfigWithServices<T>;
-  schema: ZodType<T>;
-  className?: string;
-  renderFilters?: () => React.ReactNode;
-  filters?: Record<string, string | number | undefined>;
 }
 
 export function SimpleAdminPage<T extends Record<string, unknown>>({

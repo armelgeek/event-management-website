@@ -32,6 +32,15 @@ export interface FieldConfig {
     format?: (value: unknown) => string;
     visibleIf?: (item: Record<string, unknown>) => boolean; // Visibilité conditionnelle
     customComponent?: React.ComponentType<Record<string, unknown>>;
+    /**
+     * Contrôle le layout du champ dans le formulaire :
+     * - 'full' : prend toute la largeur
+     * - 'half' : moitié (pour 2 champs côte à côte)
+     * - 'third' : tiers (pour 3 champs côte à côte)
+     * - 'inline' : s'affiche en ligne
+     * - 'auto' : laisse le form décider
+     */
+    layout?: 'full' | 'half' | 'third' | 'inline' | 'auto';
   };
   relation?: {
     entity: string;
@@ -68,7 +77,7 @@ export interface AdminConfig<T = Record<string, unknown>> {
       pageSize?: number;
     };
     form?: {
-      layout?: 'sections' | 'simple'| 'two-cols' | 'horizontal';
+      layout?: 'sections' | 'simple'| 'two-cols' | 'horizontal' | 'steps' | 'free';
       sections?: {
         title: string;
         fields: string[];
@@ -97,7 +106,6 @@ export type ChildConfig = {
 };
 
 export interface AdminConfigWithServices<T extends Record<string, unknown>> extends AdminConfigWithAccessor {
-  parent: any | undefined;
   services?: CrudService<T>;
   queryKey?: string[];
   parseEditItem?: (item: Partial<T>) => Partial<T> | T;
@@ -270,7 +278,16 @@ export const createField = {
     ), { type: 'list', ...metadata }),
 };
 
-export function generateAdminConfig(schema: ZodObject<z.ZodRawShape>, title: string): AdminConfigWithAccessor {
+export function generateAdminConfig(schema: ZodObject<z.ZodRawShape>, title: string, options?: {
+  formFields?: string[];
+  ui?: {
+    form?: {
+      layout?: 'sections' | 'simple' | 'two-cols' | 'horizontal' | 'steps';
+      sections?: { title: string; fields: string[] }[];
+      steps?: { title: string; description?: string; layout?: string; fields: string[] }[];
+    }
+  }
+}): AdminConfigWithAccessor {
   const fields: FieldConfig[] = [];
   const accessor = createDynamicAccessor();
 
@@ -290,6 +307,7 @@ export function generateAdminConfig(schema: ZodObject<z.ZodRawShape>, title: str
     throw new Error('[generateAdminConfig] Impossible de récupérer la shape du schéma ZodObject.');
   }
 
+  // Génère tous les FieldConfig
   Object.entries(shape).forEach(([key, zodField]) => {
     let metadata: ZodMetadata = {};
     let actualField = zodField;
@@ -368,6 +386,31 @@ export function generateAdminConfig(schema: ZodObject<z.ZodRawShape>, title: str
     fields.push(field);
   });
 
+  // Personnalisation de l'ordre des champs (formFields)
+  if (options?.formFields && Array.isArray(options.formFields)) {
+    fields.sort((a, b) => {
+      const ia = options.formFields!.indexOf(a.key);
+      const ib = options.formFields!.indexOf(b.key);
+      if (ia === -1 && ib === -1) return 0;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+  }
+
+  // Personnalisation du layout, sections, steps
+  const ui = {
+    table: {
+      defaultSort: 'createdAt',
+      pageSize: 10,
+    },
+    form: {
+      layout: options?.ui?.form?.layout || 'simple',
+      sections: options?.ui?.form?.sections,
+      steps: options?.ui?.form?.steps,
+    },
+  };
+
   return {
     title,
     fields,
@@ -379,15 +422,7 @@ export function generateAdminConfig(schema: ZodObject<z.ZodRawShape>, title: str
       delete: true,
       bulk: true
     },
-    ui: {
-      table: {
-        defaultSort: 'createdAt',
-        pageSize: 10,
-      },
-      form: {
-        layout: 'simple',
-      },
-    }
+    ui,
   };
 }
 
@@ -557,9 +592,30 @@ export function useZodValidation<T>(schema: ZodSchema<T>) {
 export function createAdminEntity<T extends Record<string, unknown>>(
   name: string,
   schema: z.ZodObject<z.ZodRawShape>,
-  config?: Partial<AdminConfigWithChild<T>>
+  config?: Partial<AdminConfigWithChild<T>> & {
+    fieldOverrides?: Record<string, Partial<FieldConfig>>;
+  }
 ): AdminConfigWithChild<T> {
   const baseConfig = generateAdminConfig(schema, name);
+  
+  // Application des overrides de champs
+  if (config?.fieldOverrides) {
+    baseConfig.fields = baseConfig.fields.map(field => {
+      const override = config.fieldOverrides![field.key];
+      if (override) {
+        return {
+          ...field,
+          ...override,
+          display: {
+            ...field.display,
+            ...override.display
+          }
+        };
+      }
+      return field;
+    });
+  }
+  
   return {
     ...baseConfig,
     ...config,
@@ -625,6 +681,7 @@ export function createEntitySchema<T extends z.ZodRawShape>(
 
 export interface CrudService<T extends Record<string, unknown>> {
   fetchItems: (filters?: Record<string, string | number | undefined>) => Promise<{ data: T[]; meta?: { total: number; totalPages: number } }>;
+  fetchItem: (id: string) => Promise<T>;
   createItem: (data: T) => Promise<T>;
   updateItem: (id: string, data: Partial<T>) => Promise<T>;
   deleteItem: (id: string) => Promise<void>;
@@ -663,6 +720,12 @@ export function createMockService<T extends Record<string, unknown>>(
       data: [...data],
       meta: { total: data.length, totalPages: Math.ceil(data.length / 20) }
     }),
+
+    fetchItem: async (id: string) => {
+      const item = data.find((item: T) => (item as Record<string, unknown>).id === id);
+      if (!item) throw new Error('Item not found');
+      return item;
+    },
 
     createItem: async (item: T) => {
       console.log('createMockService.createItem called with:', item);
@@ -739,6 +802,16 @@ export class AdminCrudService<T extends Record<string, unknown>> extends BaseSer
     }
   }
 
+  async fetchItem(id: string): Promise<T> {
+    try {
+      const response = await this.detail(id);
+      return response.data as T;
+    } catch (error) {
+      console.error('AdminCrudService.fetchItem error:', error);
+      throw error;
+    }
+  }
+
   async createItem(data: T): Promise<T> {
     try {
       const response = await this.create(data);
@@ -773,9 +846,8 @@ export function createApiService<T extends Record<string, unknown>>(
   const service = new AdminCrudService<T>(baseUrl);
 
   return {
-    fetchItems: (filters?: Record<string, string | number | undefined>) => {
-      return service.fetchItems(filters);
-    },
+    fetchItems: (filters?: Record<string, string | number | undefined>) => service.fetchItems(filters),
+    fetchItem: (id: string) => service.fetchItem(id),
     createItem: (data: T) => service.createItem(data),
     updateItem: (id: string, data: Partial<T>) => service.updateItem(id, data),
     deleteItem: (id: string) => service.deleteItem(id),

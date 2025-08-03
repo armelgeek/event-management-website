@@ -30,10 +30,12 @@ interface DynamicFormProps<T = Record<string, unknown>> {
   config: AdminConfig & {
     ui?: {
       form?: {
-        layout?: 'simple' | 'sections' | 'two-cols' | 'horizontal' | 'tabs';
+        layout?: 'simple' | 'sections' | 'two-cols' | 'horizontal' | 'steps' | 'free';
         sections?: { title: string; fields: string[] }[];
       };
     };
+    fieldOverrides?: Record<string, Partial<FieldConfig>>;
+    formFields?: string[];
   };
   schema: z.ZodSchema<T>;
   initialData?: T;
@@ -106,19 +108,38 @@ export function DynamicForm<
       return null;
     }
 
+    // Appliquer les fieldOverrides si définis (pour tous les layouts)
+    const mergedField = config.fieldOverrides?.[field.key] 
+      ? { ...field, ...config.fieldOverrides[field.key] }
+      : field;
+
+    // Classes CSS pour le layout du champ (seulement pour layout 'free')
+    const getFieldClasses = () => {
+      if (config.ui?.form?.layout !== 'free') return '';
+      
+      const layout = mergedField.display?.layout;
+      switch (layout) {
+        case 'full': return 'col-span-full';
+        case 'half': return 'col-span-full md:col-span-1';
+        case 'third': return 'col-span-full md:col-span-1 lg:col-span-1';
+        case 'inline': return 'col-span-1';
+        default: return 'col-span-full md:col-span-1';
+      }
+    };
+
     return (
       <FormField
         key={field.key}
         control={form.control}
         name={field.key as keyof Record<string, unknown>}
         render={({ field: fieldProps }) => (
-          <FormItem>
-            <FormLabel>{field.label}</FormLabel>
+          <FormItem className={getFieldClasses()}>
+            <FormLabel>{mergedField.label}</FormLabel>
             <FormControl>
-              {renderFieldInput(field, fieldProps)}
+              {renderFieldInput(mergedField, fieldProps)}
             </FormControl>
-            {field.description && (
-              <FormDescription>{field.description}</FormDescription>
+            {mergedField.description && (
+              <FormDescription>{mergedField.description}</FormDescription>
             )}
             <FormMessage />
           </FormItem>
@@ -398,6 +419,11 @@ export function DynamicForm<
   const getGridCols = () => {
     const layout = config.ui?.form?.layout as string | undefined;
     const fieldCount = config.fields.filter(f => f.display?.showInForm !== false).length;
+    
+    if (layout === 'free') {
+      // Pour le layout libre, utilise une grille responsive à 2 colonnes qui permet aux champs 'full' de prendre toute la largeur
+      return 'grid-cols-1 md:grid-cols-2 gap-4';
+    }
     if (fieldCount > 6) return 'grid-cols-1 md:grid-cols-2';
     if (layout === 'sections') return '';
     if (layout === 'simple') return 'grid-cols-1';
@@ -421,13 +447,22 @@ export function DynamicForm<
         </div>
       ));
     }
-    // Par défaut, grid responsive
+    
+    // Utiliser formFields si défini, sinon tous les champs
+    const fieldsToRender = config.formFields 
+      ? config.formFields.map((fieldKey: string) => config.fields.find(f => f.key === fieldKey)).filter(Boolean) as FieldConfig[]
+      : config.fields.filter(field => field.display?.showInForm !== false);
+
+    // Trier par ordre si défini (y compris les fieldOverrides) - pour tous les layouts
+    const sortedFields = fieldsToRender.sort((a, b) => {
+      const aOrder = config.fieldOverrides?.[a.key]?.display?.order ?? a.display?.order ?? 0;
+      const bOrder = config.fieldOverrides?.[b.key]?.display?.order ?? b.display?.order ?? 0;
+      return aOrder - bOrder;
+    });
+
     return (
-      <div className={`grid gap-4 ${getGridCols()}`}>
-        {config.fields
-          .filter(field => field.display?.showInForm !== false)
-          .sort((a, b) => (a.display?.order || 0) - (b.display?.order || 0))
-          .map(renderField)}
+      <div className={`grid ${getGridCols()}`}>
+        {sortedFields.map(renderField)}
       </div>
     );
   };

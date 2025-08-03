@@ -208,6 +208,9 @@ function wrapParentService<T extends Record<string, unknown>>(service: CrudServi
       }
       return service.fetchItems(castedFilters);
     },
+    fetchItem: (id: string) => {
+      return service.fetchItem(id);
+    },
     createItem: (data: T) => {
       if (parentId && service.createItem.length > 0) {
         return service.createItem({ ...data, parentId });

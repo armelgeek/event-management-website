@@ -1,3 +1,4 @@
+
 export const API_ENDPOINTS = {
   endpoint: {
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api",
@@ -33,5 +34,21 @@ export const API_ENDPOINTS = {
     activity: "/dashboard/activity",
     events: "/dashboard/events",
     notifications: "/dashboard/notifications",
-  }
+  },
+  event: {
+    base: '/events',
+    list: '/events',
+    detail: (id: string) => `/events/${id}`,
+    create: '/events',
+    update: (id: string) => `/events/${id}`,
+    delete: (id: string) => `/events/${id}`,
+  },
+  booking: {
+    base: '/bookings',
+    list: '/bookings',
+    detail: (id: string) => `/bookings/${id}`,
+    create: '/bookings',
+    update: (id: string) => `/bookings/${id}`,
+    delete: (id: string) => `/bookings/${id}`,
+  },
 };

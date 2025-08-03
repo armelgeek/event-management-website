@@ -57,7 +57,7 @@ export const CLIENT_MENU_ITEMS: NavItem[] = [
 ];
 
 export function getSidebarNavItems(): NavItem[] {
-  return getRegisteredAdminEntities()
+  const adminEntities = getRegisteredAdminEntities()
     .slice()
     .sort((a, b) => (a.menuOrder ?? 999) - (b.menuOrder ?? 999))
     .map(entity => {
@@ -73,6 +73,8 @@ export function getSidebarNavItems(): NavItem[] {
         items: [],
       };
     });
+
+  return [...adminEntities];
 }
 
 export { kAppName, kAppAbbr, kAppTagline, kAppDescription };
