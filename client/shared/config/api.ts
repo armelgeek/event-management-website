@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
     session: "/v1/users/session",
   },
   category: {
+    base: '/categories',
     list: "/categories",
     detail: (id: string) => `/categories/${id}`,
     bySlug: (slug: string) => `/categories/slug/${slug}`,
@@ -42,6 +43,14 @@ export const API_ENDPOINTS = {
     create: '/events',
     update: (id: string) => `/events/${id}`,
     delete: (id: string) => `/events/${id}`,
+  },
+  tags: {
+    base: '/tags',
+    list: '/tags',
+    detail: (id: string) => `/tags/${id}`,
+    create: '/tags',
+    update: (id: string) => `/tags/${id}`,
+    delete: (id: string) => `/tags/${id}`,
   },
   booking: {
     base: '/bookings',

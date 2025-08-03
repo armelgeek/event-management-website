@@ -7,7 +7,7 @@ export class GetAllCategoriesUseCase {
   async execute(page: number = 1, limit: number = 10) {
     try {
       const result = await this.categoryRepository.findAll(page, limit)
-      return { success: true, data: result }
+      return { success: true, ...result }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
@@ -30,21 +30,6 @@ export class GetCategoryByIdUseCase {
   }
 }
 
-export class GetCategoryBySlugUseCase {
-  constructor(private categoryRepository: CategoryRepositoryInterface) {}
-
-  async execute(slug: string) {
-    try {
-      const category = await this.categoryRepository.findBySlug(slug)
-      if (!category) {
-        return { success: false, error: 'Category not found' }
-      }
-      return { success: true, data: category }
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
-    }
-  }
-}
 
 export class CreateCategoryUseCase {
   constructor(private categoryRepository: CategoryRepositoryInterface) {}

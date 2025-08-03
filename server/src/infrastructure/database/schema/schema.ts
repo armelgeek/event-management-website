@@ -2,14 +2,51 @@ import { relations } from 'drizzle-orm'
 import { integer, pgTable, real, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 import { users } from './auth'
 
+export const categories = pgTable('category', {
+  id: text('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull()
+})
+
+export const tags = pgTable('tag', {
+  id: text('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull()
+})
+
+export const eventTags = pgTable(
+  'event_tag',
+  {
+    eventId: text('eventId')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    tagId: text('tagId')
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' })
+  },
+  (table) => ({
+    pk: uniqueIndex('event_tag_pk').on(table.eventId, table.tagId)
+  })
+)
+
 export const events = pgTable('event', {
   id: text('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  image: text('image'),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  organizer: varchar('organizer', { length: 255 }),
   startDate: timestamp('startDate', { withTimezone: true }).notNull(),
   endDate: timestamp('endDate', { withTimezone: true }).notNull(),
   location: varchar('location', { length: 255 }).notNull(),
-  description: text('description'),
+  price: real('price').notNull().default(0),
+  maxAttendees: integer('maxAttendees').notNull().default(0),
+  currentAttendees: integer('currentAttendees').notNull().default(0),
+  imageUrl: text('imageUrl'),
+  status: varchar('status', { length: 50 }).notNull().default('draft'),
+  categoryId: text('categoryId').references(() => categories.id, { onDelete: 'set null' }),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull(),
   creatorId: text('creatorId')
@@ -50,6 +87,10 @@ export const eventsRelations = relations(events, ({ many, one }) => ({
   creator: one(users, {
     fields: [events.creatorId],
     references: [users.id]
+  }),
+  category: one(categories, {
+    fields: [events.categoryId],
+    references: [categories.id]
   })
 }))
 

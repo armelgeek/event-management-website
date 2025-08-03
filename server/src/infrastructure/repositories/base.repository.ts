@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import process from 'node:process'
 import { count, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -19,7 +20,7 @@ export interface BaseUpdateEntity {
 }
 
 export interface PaginatedResponse<T> {
-  items: T[]
+  data: T[]
   total: number
   page: number
   limit: number
@@ -129,7 +130,7 @@ export abstract class BaseRepository<
     const totalPages = Math.ceil(total / limit)
 
     return {
-      items: items.map((item) => this.transformToEntity(item)),
+      data: items.map((item) => this.transformToEntity(item)),
       total,
       page,
       limit,
@@ -138,7 +139,7 @@ export abstract class BaseRepository<
   }
 
   async save(entity: TCreateEntity): Promise<TEntity> {
-    const insertData = this.transformForInsert(entity)
+    const insertData = this.transformForInsert({ ...entity, id: randomUUID() })
     const result = await this.db.insert(this.table).values(insertData).returning()
     return this.transformToEntity(result[0])
   }

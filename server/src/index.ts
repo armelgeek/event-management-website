@@ -1,15 +1,16 @@
 import process from 'node:process'
 import { App } from './app'
-import { BlogController, PermissionController, UserController } from './infrastructure/controllers'
+import { PermissionController, UserController } from './infrastructure/controllers'
 import { CategoryController } from './infrastructure/controllers/category.controller'
 import { EventController } from './infrastructure/controllers/event.controller'
+import { TagController } from './infrastructure/controllers/tag.controller'
 
 const app = new App([
   new UserController(),
   new PermissionController(),
-  new BlogController(),
   new CategoryController(),
-  new EventController()
+  new EventController(),
+  new TagController()
 ]).getApp()
 
 const port = Number(process.env.PORT) || 3000

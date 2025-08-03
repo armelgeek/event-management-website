@@ -1,23 +1,19 @@
 import { eq } from 'drizzle-orm'
 import type { CategoryType } from '@/domain/models/category.model'
 import type { CategoryRepositoryInterface } from '@/domain/repositories/category.repository.interface'
-import { categories } from '../database/schema/category'
+import { categories } from '../database/schema'
 import { BaseRepository } from './base.repository'
 
 interface CategoryCreateData {
   name: string
-  slug: string
   description?: string
-  color?: string
   createdAt?: string | Date
   updatedAt?: string | Date
 }
 
 interface CategoryUpdateData {
   name?: string
-  slug?: string
   description?: string
-  color?: string
   updatedAt?: string | Date
 }
 
@@ -27,12 +23,6 @@ export class CategoryRepositoryImpl
 {
   constructor() {
     super(categories)
-  }
-
-  async findBySlug(slug: string): Promise<CategoryType | null> {
-    const result = await this.db.select().from(categories).where(eq(categories.slug, slug)).limit(1)
-    if (!result.length) return null
-    return this.transformToEntity(result[0])
   }
 
   // Implémentation de l'interface CategoryRepositoryInterface

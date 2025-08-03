@@ -1,15 +1,13 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import {
-  CreateCategoryUseCase,
-  DeleteCategoryUseCase,
-  GetAllCategoriesUseCase,
-  GetCategoryByIdUseCase,
-  UpdateCategoryUseCase
-} from '@/application/use-cases/category'
-import { CategoryRepositoryImpl } from '@/infrastructure/repositories/category.repository'
+import { CreateTagUseCase } from '@/application/use-cases/tag/create-tag.use-case'
+import { DeleteTagUseCase } from '@/application/use-cases/tag/delete-tag.use-case'
+import { GetAllTagsUseCase } from '@/application/use-cases/tag/get-all-tags.use-case'
+import { GetTagByIdUseCase } from '@/application/use-cases/tag/get-tag-by-id.use-case'
+import { UpdateTagUseCase } from '@/application/use-cases/tag/update-tag.use-case'
 import type { Routes } from '@/domain/types/route.type'
+import { TagRepositoryImpl } from '../repositories/tag.repository'
 
-export class CategoryController implements Routes {
+export class TagController implements Routes {
   public controller: OpenAPIHono
 
   constructor() {
@@ -17,33 +15,33 @@ export class CategoryController implements Routes {
     this.initRoutes()
   }
 
-  private categoryRepo = new CategoryRepositoryImpl()
-  private getAllCategories = new GetAllCategoriesUseCase(this.categoryRepo)
-  private getCategoryById = new GetCategoryByIdUseCase(this.categoryRepo)
-  private createCategory = new CreateCategoryUseCase(this.categoryRepo)
-  private updateCategory = new UpdateCategoryUseCase(this.categoryRepo)
-  private deleteCategory = new DeleteCategoryUseCase(this.categoryRepo)
+  private tagRepo = new TagRepositoryImpl()
+  private getAllTags = new GetAllTagsUseCase(this.tagRepo)
+  private getTagById = new GetTagByIdUseCase(this.tagRepo)
+  private createTag = new CreateTagUseCase(this.tagRepo)
+  private updateTag = new UpdateTagUseCase(this.tagRepo)
+  private deleteTag = new DeleteTagUseCase(this.tagRepo)
 
-  private CategorySchema = z.object({
-    id: z.string().openapi({ example: 'cat_ABC123' }),
-    name: z.string().openapi({ example: 'Technologie' }),
-    description: z.string().optional().openapi({ example: 'Articles sur les nouvelles technologies' }),
+  private TagSchema = z.object({
+    id: z.string().openapi({ example: 'tag_ABC123' }),
+    name: z.string().openapi({ example: 'React' }),
+    description: z.string().optional().openapi({ example: 'Tag pour ReactJS' }),
     createdAt: z.string().openapi({ example: '2025-05-06T16:34:49.937Z' }),
     updatedAt: z.string().openapi({ example: '2025-05-06T16:34:49.937Z' })
   })
-  private CreateCategorySchema = this.CategorySchema.omit({ id: true, createdAt: true, updatedAt: true })
-  private UpdateCategorySchema = this.CreateCategorySchema.partial()
+  private CreateTagSchema = this.TagSchema.omit({ id: true, createdAt: true, updatedAt: true })
+  private UpdateTagSchema = this.CreateTagSchema.partial()
 
   public initRoutes() {
-    // GET /categories
+    // GET /tags
     this.controller.openapi(
       createRoute({
         method: 'get',
-        path: '/categories',
-        tags: ['Categories'],
-        summary: 'Get all categories',
-        description: 'Récupère la liste paginée des catégories',
-        operationId: 'getAllCategories',
+        path: '/tags',
+        tags: ['Tags'],
+        summary: 'Get all tags',
+        description: 'Récupère la liste paginée des tags',
+        operationId: 'getAllTags',
         request: {
           query: z.object({
             page: z.string().optional(),
@@ -52,14 +50,14 @@ export class CategoryController implements Routes {
         },
         responses: {
           200: {
-            description: 'Liste des catégories',
+            description: 'Liste des tags',
             content: {
               'application/json': {
                 schema: z.object({
                   success: z.boolean(),
                   data: z
                     .object({
-                      data: z.array(this.CategorySchema),
+                      data: z.array(this.TagSchema),
                       total: z.number(),
                       page: z.number(),
                       limit: z.number(),
@@ -76,31 +74,31 @@ export class CategoryController implements Routes {
       async (c: any) => {
         const page = Number(c.req.query('page') ?? '1')
         const limit = Number(c.req.query('limit') ?? '10')
-        const result = await this.getAllCategories.execute(page, limit)
+        const result = await this.getAllTags.execute(page, limit)
         return c.json(result)
       }
     )
 
-    // GET /categories/:id
+    // GET /tags/:id
     this.controller.openapi(
       createRoute({
         method: 'get',
-        path: '/categories/:id',
-        tags: ['Categories'],
-        summary: 'Get category by ID',
-        description: 'Récupère une catégorie par son identifiant',
-        operationId: 'getCategoryById',
+        path: '/tags/:id',
+        tags: ['Tags'],
+        summary: 'Get tag by ID',
+        description: 'Récupère un tag par son identifiant',
+        operationId: 'getTagById',
         request: {
           params: z.object({ id: z.string() })
         },
         responses: {
           200: {
-            description: 'Catégorie par ID',
+            description: 'Tag par ID',
             content: {
               'application/json': {
                 schema: z.object({
                   success: z.boolean(),
-                  data: this.CategorySchema.optional(),
+                  data: this.TagSchema.optional(),
                   error: z.string().optional()
                 })
               }
@@ -110,38 +108,37 @@ export class CategoryController implements Routes {
       }),
       async (c: any) => {
         const id = c.req.param('id')
-        const result = await this.getCategoryById.execute(id)
+        const result = await this.getTagById.execute(id)
         return c.json(result)
       }
     )
 
-  
-    // POST /categories
+    // POST /tags
     this.controller.openapi(
       createRoute({
         method: 'post',
-        path: '/categories',
-        tags: ['Categories'],
-        summary: 'Create a new category',
-        description: 'Crée une nouvelle catégorie',
-        operationId: 'createCategory',
+        path: '/tags',
+        tags: ['Tags'],
+        summary: 'Create a new tag',
+        description: 'Crée un nouveau tag',
+        operationId: 'createTag',
         request: {
           body: {
             content: {
               'application/json': {
-                schema: this.CreateCategorySchema
+                schema: this.CreateTagSchema
               }
             }
           }
         },
         responses: {
           200: {
-            description: 'Catégorie créée',
+            description: 'Tag créé',
             content: {
               'application/json': {
                 schema: z.object({
                   success: z.boolean(),
-                  data: this.CategorySchema.optional(),
+                  data: this.TagSchema.optional(),
                   error: z.string().optional()
                 })
               }
@@ -151,38 +148,38 @@ export class CategoryController implements Routes {
       }),
       async (c: any) => {
         const body = await c.req.json()
-        const result = await this.createCategory.execute(body)
+        const result = await this.createTag.execute(body)
         return c.json(result)
       }
     )
 
-    // PUT /categories/:id
+    // PUT /tags/:id
     this.controller.openapi(
       createRoute({
         method: 'put',
-        path: '/categories/:id',
-        tags: ['Categories'],
-        summary: 'Update a category',
-        description: 'Met à jour une catégorie',
-        operationId: 'updateCategory',
+        path: '/tags/:id',
+        tags: ['Tags'],
+        summary: 'Update a tag',
+        description: 'Met à jour un tag',
+        operationId: 'updateTag',
         request: {
           params: z.object({ id: z.string() }),
           body: {
             content: {
               'application/json': {
-                schema: this.UpdateCategorySchema
+                schema: this.UpdateTagSchema
               }
             }
           }
         },
         responses: {
           200: {
-            description: 'Catégorie mise à jour',
+            description: 'Tag mis à jour',
             content: {
               'application/json': {
                 schema: z.object({
                   success: z.boolean(),
-                  data: this.CategorySchema.optional(),
+                  data: this.TagSchema.optional(),
                   error: z.string().optional()
                 })
               }
@@ -193,25 +190,26 @@ export class CategoryController implements Routes {
       async (c: any) => {
         const id = c.req.param('id')
         const body = await c.req.json()
-        const result = await this.updateCategory.execute(id, body)
+        const result = await this.updateTag.execute(id, body)
         return c.json(result)
       }
     )
 
+    // DELETE /tags/:id
     this.controller.openapi(
       createRoute({
         method: 'delete',
-        path: '/categories/:id',
-        tags: ['Categories'],
-        summary: 'Delete a category',
-        description: 'Supprime une catégorie',
-        operationId: 'deleteCategory',
+        path: '/tags/:id',
+        tags: ['Tags'],
+        summary: 'Delete a tag',
+        description: 'Supprime un tag',
+        operationId: 'deleteTag',
         request: {
           params: z.object({ id: z.string() })
         },
         responses: {
           200: {
-            description: 'Catégorie supprimée',
+            description: 'Tag supprimé',
             content: {
               'application/json': {
                 schema: z.object({
@@ -226,7 +224,7 @@ export class CategoryController implements Routes {
       }),
       async (c: any) => {
         const id = c.req.param('id')
-        const result = await this.deleteCategory.execute(id)
+        const result = await this.deleteTag.execute(id)
         return c.json(result)
       }
     )
