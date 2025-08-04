@@ -2,24 +2,49 @@
 
 import { useAuth } from "@/shared/providers/auth-provider";
 import { Button } from "@/shared/components/atoms/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/atoms/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/atoms/ui/card";
 import { Input } from "@/shared/components/atoms/ui/input";
 import { Label } from "@/shared/components/atoms/ui/label";
-import { Textarea } from "@/shared/components/atoms/ui/textarea";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  User,
   Camera,
-  Save,
-  Shield
+  Shield,
+  Loader2,
+  EditIcon,
+  CheckIcon,
+  XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
+import { useUpdateProfile } from "@/features/auth/hooks/useUpdateProfile";
+import { cn } from "@/shared/lib/utils";
+import { AVATAR_CHOICES, AVATARS_PER_PAGE } from "@/shared/lib/constants/app.constant";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { isLoading } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
+  const { isLoading, session, refreshSession } = useAuth();
+  const  router = useRouter();
+  const user = useMemo(() => session?.user || {}, [session?.user]);
+  const { updateName, updateEmail, updateAvatar } = useUpdateProfile();
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user);
+
+  const [avatarPage, setAvatarPage] = useState(0);
+  const totalAvatarPages = Math.ceil(AVATAR_CHOICES.length / AVATARS_PER_PAGE);
+  const paginatedAvatars = AVATAR_CHOICES.slice(
+    avatarPage * AVATARS_PER_PAGE,
+    (avatarPage + 1) * AVATARS_PER_PAGE
+  );
+  useEffect(() => {
+    setCurrentUser(user);
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -30,11 +55,138 @@ export default function ProfilePage() {
     );
   }
 
-  const handleSave = () => {
-    // Logique de sauvegarde
-    setIsEditing(false);
-    console.log("Profil sauvegardé");
-  };
+  function EditableField({
+    label,
+    value = "",
+    onUpdate,
+    type = "text",
+    placeholder = "---",
+    disabled = false,
+  }: {
+    label: string;
+    value?: string;
+    onUpdate: (value: string) => Promise<boolean>;
+    type?: "text" | "email";
+    placeholder?: string;
+    disabled?: boolean;
+  }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [inputValue, setInputValue] = useState(value);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSave = async () => {
+      if (inputValue === value) {
+        setIsEditing(false);
+        return;
+      }
+      setIsLoading(true);
+      const success = await onUpdate(inputValue);
+      setIsLoading(false);
+      if (success) {
+        setIsEditing(false);
+        await refreshSession();
+      }
+    };
+
+    const handleCancel = () => {
+      setInputValue(value);
+      setIsEditing(false);
+    };
+
+    const handleEdit = () => {
+      if (!disabled) {
+        setInputValue(value);
+        setIsEditing(true);
+      }
+    };
+
+    return (
+      <div className="space-y-1">
+        <Label className="text-xs text-gray-500 font-medium tracking-wide">
+          {label}
+        </Label>
+        <div
+          className={cn(
+            "flex flex-row items-center min-h-[40px] rounded-lg border border-transparent px-2 py-1 transition-all bg-white hover:border-primary/30 focus-within:border-primary/70",
+            disabled && "cursor-not-allowed opacity-60 bg-gray-50"
+          )}
+          tabIndex={disabled ? -1 : 0}
+          onClick={handleEdit}
+          aria-disabled={disabled}
+        >
+          {isEditing ? (
+            <div className="flex items-center gap-2 w-full">
+              <Input
+                type={type}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={placeholder}
+                className="flex-1 text-base px-2 py-1 border border-gray-200 rounded-md focus:border-primary focus:ring-1 focus:ring-primary/30"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSave();
+                  if (e.key === "Escape") handleCancel();
+                }}
+                aria-label={label}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="border-green-500 text-green-600 hover:bg-green-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSave();
+                }}
+                disabled={isLoading}
+                aria-label="Valider"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckIcon className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="border-red-500 text-red-600 hover:bg-red-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancel();
+                }}
+                disabled={isLoading}
+                aria-label="Annuler"
+              >
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <span
+                className={cn(
+                  "flex-1 text-base px-2 py-1 border border-gray-300 rounded-lg",
+                  !value && "text-muted-foreground text-sm"
+                )}
+              >
+                {value || placeholder}
+              </span>
+              {!disabled && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-1 text-primary hover:bg-primary/10"
+                  tabIndex={-1}
+                  aria-label={`Modifier ${label}`}
+                >
+                  <EditIcon className="h-4 w-4" />
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -46,12 +198,6 @@ export default function ProfilePage() {
             Gérez vos informations personnelles et préférences
           </p>
         </div>
-        <Button 
-          onClick={() => setIsEditing(!isEditing)}
-          variant={isEditing ? "outline" : "default"}
-        >
-          {isEditing ? "Annuler" : "Modifier"}
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -64,16 +210,104 @@ export default function ProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center space-y-4">
-            <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center">
-              <User className="h-16 w-16 text-gray-400" />
+            <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+              {currentUser.image ? (
+                <Image
+                  src={currentUser.image}
+                  alt="Avatar"
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 object-cover rounded-full border"
+                  unoptimized
+                />
+              ) : (
+                <User className="h-16 w-16 text-gray-400" />
+              )}
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShowAvatarPicker(true)}>
               Changer la photo
             </Button>
+            {showAvatarPicker && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                  <button
+                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"
+                    onClick={() => setShowAvatarPicker(false)}
+                    aria-label="Fermer"
+                  >
+                    <XIcon className="w-5 h-5" />
+                  </button>
+                  <h3 className="text-lg font-semibold mb-4">Choisissez un avatar</h3>
+                  <div className="grid grid-cols-5 gap-4 mb-4">
+                    {paginatedAvatars.map((avatar) => (
+                      <button
+                        key={avatar}
+                        className={cn(
+                          "relative rounded-full border-2 p-1 transition-all focus:outline-none",
+                          currentUser.image === avatar
+                            ? "border-primary ring-2 ring-primary"
+                            : "border-transparent hover:border-primary/40"
+                        )}
+                        onClick={async () => {
+                          setAvatarLoading(true);
+                          const success = await updateAvatar(avatar);
+                          setAvatarLoading(false);
+                          if (success) {
+                            setCurrentUser({ ...currentUser, image: avatar });
+                            setShowAvatarPicker(false);
+                            await refreshSession();
+                          }
+                        }}
+                        disabled={avatarLoading}
+                        aria-label={`Choisir l'avatar ${avatar}`}
+                      >
+                        <Image
+                          src={avatar}
+                          alt="Avatar choix"
+                          width={80}
+                          height={80}
+                          className="object-cover rounded-full"
+                          unoptimized
+                        />
+                        {currentUser.image === avatar && (
+                          <CheckIcon className="absolute top-1 right-1 w-5 h-5 text-primary bg-white rounded-full" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAvatarPage((p) => Math.max(0, p - 1))}
+                      disabled={avatarPage === 0 || avatarLoading}
+                    >
+                      Précédent
+                    </Button>
+                    <span className="text-xs text-gray-500">
+                      Page {avatarPage + 1} / {totalAvatarPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAvatarPage((p) => Math.min(totalAvatarPages - 1, p + 1))}
+                      disabled={avatarPage >= totalAvatarPages - 1 || avatarLoading}
+                    >
+                      Suivant
+                    </Button>
+                  </div>
+                  {avatarLoading && (
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Mise à jour de l&apos;avatar...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Informations principales */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -85,125 +319,55 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">Prénom</Label>
-                <Input
-                  id="firstName"
-                  defaultValue="Jean"
-                  disabled={!isEditing}
-                  className={!isEditing ? "bg-gray-50" : ""}
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Nom</Label>
-                <Input
-                  id="lastName"
-                  defaultValue="Dupont"
-                  disabled={!isEditing}
-                  className={!isEditing ? "bg-gray-50" : ""}
-                />
-              </div>
-            </div>
+            <div className="flex flex-col space-y-4">
+              <EditableField
+                label="Nom"
+                value={currentUser.name}
+                onUpdate={async (val) => {
+                  const success = await updateName(
+                    val + " " + (currentUser.name || "")
+                  );
+                  if (success) setCurrentUser({ ...currentUser, name: val });
+                  return success;
+                }}
+                placeholder="Votre prénom"
+                disabled={currentUser.isAnonymous === true}
+              />
 
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  defaultValue="jean.dupont@email.com"
-                  disabled={!isEditing}
-                  className={!isEditing ? "bg-gray-50" : ""}
-                />
-              </div>
+              <EditableField
+                label="Email"
+                value={currentUser.email}
+                onUpdate={async (val) => {
+                  const success = await updateEmail(val);
+                  if (success) setCurrentUser({ ...currentUser, email: val });
+                  return success;
+                }}
+                type="email"
+                placeholder="votre@email.com"
+                disabled={currentUser.isAnonymous === true}
+              />
             </div>
-
-            <div>
-              <Label htmlFor="phone">Téléphone</Label>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <Input
-                  id="phone"
-                  defaultValue="+33 6 12 34 56 78"
-                  disabled={!isEditing}
-                  className={!isEditing ? "bg-gray-50" : ""}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="address">Adresse</Label>
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-gray-400 mt-3" />
-                <Textarea
-                  id="address"
-                  defaultValue="123 Rue de la République&#10;75001 Paris, France"
-                  disabled={!isEditing}
-                  className={!isEditing ? "bg-gray-50" : ""}
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            {isEditing && (
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleSave} className="gap-2">
-                  <Save className="h-4 w-4" />
-                  Sauvegarder
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsEditing(false)}
-                >
-                  Annuler
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Sécurité et confidentialité */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Sécurité et confidentialité
           </CardTitle>
-          <CardDescription>
-            Gérez la sécurité de votre compte
-          </CardDescription>
+          <CardDescription>Gérez la sécurité de votre compte</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div>
               <h4 className="font-medium">Mot de passe</h4>
-              <p className="text-sm text-gray-600">Dernière modification il y a 3 mois</p>
+              <p className="text-sm text-gray-600">Modifier le mot de passe</p>
             </div>
-            <Button variant="outline" size="sm">
+
+            <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/profile/update-password')}>
               Modifier
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div>
-              <h4 className="font-medium">Authentification à deux facteurs</h4>
-              <p className="text-sm text-gray-600">Sécurisez votre compte avec 2FA</p>
-            </div>
-            <Button variant="outline" size="sm">
-              Activer
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div>
-              <h4 className="font-medium">Sessions actives</h4>
-              <p className="text-sm text-gray-600">Gérer vos appareils connectés</p>
-            </div>
-            <Button variant="outline" size="sm">
-              Voir tout
             </Button>
           </div>
         </CardContent>

@@ -10,13 +10,9 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-primary" />
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Sécurité du compte
           </h1>
@@ -25,8 +21,7 @@ export default async function Page() {
           </p>
         </div>
 
-        {/* Conseils de sécurité */}
-        <Card className="shadow-lg border-0 bg-white mb-6">
+        <Card className="border-0 bg-white mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Shield className="w-5 h-5 text-green-600" />
@@ -60,8 +55,7 @@ export default async function Page() {
           </CardContent>
         </Card>
 
-        {/* Modification du mot de passe */}
-        <Card className="shadow-lg border-0 bg-white">
+        <Card className="border-0 bg-white">
           <CardHeader>
             <CardTitle className="text-xl">
               Modifier le mot de passe

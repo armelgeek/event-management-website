@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/atoms/ui/card";
 import { DeleteAccount } from "@/features/auth/components/organisms/delete-account-form";
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/shared/components/atoms/ui/alert";
-import { authClient } from '@/shared/lib/config/auth-client';
+import {  useSession } from '@/shared/lib/config/auth-client';
 import { Skeleton } from "@/shared/components/atoms/ui/skeleton";
 
 interface User {
@@ -15,9 +14,6 @@ interface User {
   isAnonymous?: boolean | null;
 }
 
-interface SessionType {
-  user?: User;
-}
 
 // Composant de chargement réutilisable
 const LoadingSkeleton = () => (
@@ -66,50 +62,14 @@ const DeletionSection = () => (
 );
 
 export default function DeleteAccountClient() {
-  const [session, setSession] = useState<SessionType | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchSession = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const sessionData = await authClient.getSession();
-      setSession(sessionData.data);
-    } catch (error) {
-      console.error('Failed to get session:', error);
-      setError('Impossible de charger les informations de session');
-      setSession(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSession();
-  }, [fetchSession]);
-
-  // État de chargement
-  if (loading) {
+  const {data} = useSession();
+  const session = data?.session;
+  const user = data?.user as User;
+  if(!session || !user) {
     return <LoadingSkeleton />;
   }
 
-  // État d'erreur
-  if (error) {
-    return (
-      <div className="container max-w-4xl mx-auto py-8">
-        <Alert className="border-destructive/30 bg-destructive/5">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <AlertDescription className="text-destructive">
-            {error}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  // Utilisateur non connecté ou anonyme
-  if (!session?.user || session.user.isAnonymous) {
+  if (!user || user.isAnonymous) {
     return (
       <div className="container max-w-4xl mx-auto py-8">
         <Alert>
@@ -123,10 +83,10 @@ export default function DeleteAccountClient() {
   }
 
   return (
-    <div className="container max-w-4xl w-[500px] mx-auto py-8">
+    <>
       <Card className="border-destructive/20">
-        <CardHeader className="text-center pb-6">
-          <CardTitle className="text-2xl text-red-600 flex items-center justify-center gap-3">
+        <CardHeader className="pb-6">
+          <CardTitle className="text-2xl text-red-600 flex items-center justify-start gap-3">
             <AlertTriangle className="h-7 w-7" />
             Zone de danger
           </CardTitle>
@@ -140,6 +100,6 @@ export default function DeleteAccountClient() {
           <DeletionSection />
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

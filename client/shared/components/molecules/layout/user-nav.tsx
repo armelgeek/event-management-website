@@ -17,23 +17,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/shared/providers/auth-provider';
-import { authClient } from '@/shared/lib/config/auth-client';
-type SessionUser = {
-  name?: string;
-  email?: string;
-  image?: string;
-  role?: string;
-};
-type Session = {
-  user?: SessionUser;
-  [key: string]: unknown;
-};
+import { useSession } from '@/shared/lib/config/auth-client';
+
 export function UserNav() {
   const { logout } = useAuth();
-  const { data } = authClient.useSession();
-
-  const session = data?.session as Session;
-  const user = session?.user;
+  const { data } = useSession();
+  const session = data?.session;
+  const user = data?.user;
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -46,7 +36,6 @@ export function UserNav() {
       console.error('Logout error:', error);
     }
   };
-
   if (!session || !user) return (
     <div className="flex items-center gap-2">
       <Button variant="outline" asChild>
@@ -64,8 +53,8 @@ export function UserNav() {
         <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
           <Avatar className='h-8 w-8'>
             <AvatarImage
-              src={user.image ?? 'https://i.pravatar.cc/150?img=50'}
-              alt={user.name ?? ''}
+              src={user?.image ?? 'https://i.pravatar.cc/150?img=50'}
+              alt={user?.name ?? ''}
               className='h-8 w-8 rounded-full border border-red-500 object-cover'
             />
             <AvatarFallback>
@@ -78,17 +67,17 @@ export function UserNav() {
         <DropdownMenuLabel className='font-normal'>
           <div className='flex flex-col space-y-1'>
             <p className='text-sm font-medium leading-none'>
-              {user.name ?? 'Utilisateur'}
+              {user?.name ?? 'Utilisateur'}
             </p>
             <p className='text-xs leading-none text-muted-foreground'>
-              {user.email}
+              {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/account" className="flex items-center">
+            <Link href="/dashboard/profile" className="flex items-center">
               <User2Icon className="mr-2 h-4 w-4" />
               Mon profil
             </Link>
@@ -96,12 +85,12 @@ export function UserNav() {
           <DropdownMenuItem asChild>
             <Link href="/account/bookings" className="flex items-center">
               <TimerIcon className="mr-2 h-4 w-4" />
-              Mes réservations
+              Mes evenements
             </Link>
           </DropdownMenuItem>
-          {user.role === 'admin' && (
+          {user.isAdmin && (
             <DropdownMenuItem asChild>
-              <Link href="/d" className="flex items-center">
+              <Link href="/dashboard" className="flex items-center">
                 <ShieldCheck className="mr-2 h-4 w-4" />
                 Administration
               </Link>

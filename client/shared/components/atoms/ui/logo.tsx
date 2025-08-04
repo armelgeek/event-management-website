@@ -63,7 +63,6 @@ const Logo = React.forwardRef<HTMLDivElement, LogoProps>(
           <path d="M4 6h16v6H4z" opacity="0.7"/>
           <path d="M6 8h3v2H6zm5 0h3v2h-3zm5 0h2v2h-2z" opacity="0.5"/>
         </svg>
-        
         {/* Effet de brillance */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-lg" />
       </div>
@@ -76,7 +75,7 @@ const Logo = React.forwardRef<HTMLDivElement, LogoProps>(
         themeClasses[theme],
         textClassName
       )}>
-        Boiler
+       EventHub
       </span>
     );
 
@@ -85,7 +84,7 @@ const Logo = React.forwardRef<HTMLDivElement, LogoProps>(
         "text-xs font-medium tracking-wide opacity-70",
         themeClasses[theme]
       )}>
-        Transport & Voyage
+        Evenements
       </span>
     );
 
